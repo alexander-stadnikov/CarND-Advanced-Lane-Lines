@@ -1,10 +1,15 @@
-from pipeline import Camera
 import glob
 import cv2 as cv
+from pipeline import Camera
 
-c = Camera(glob.glob("./camera_cal/*.*"), calibration_pattern_size=(9, 6), debug_output=True)
+camera = Camera("./debug_output/calibration.cache")
+if not camera.calibrated:
+    camera.calibrate_with_chessboard(glob.glob("./camera_cal/*.jpg"), pattern_size=(9, 6), output="debug_output")
+
 img = cv.imread("./camera_cal/calibration1.jpg")
-img = c.undistort(img)
-cv.imshow('undistorted', img)
+undistorted_img = camera.undistort(img)
+cv.imshow("Distorted", img)
+cv.waitKey(0)
+cv.imshow("Undistorted", undistorted_img)
 cv.waitKey(0)
 cv.destroyAllWindows()
