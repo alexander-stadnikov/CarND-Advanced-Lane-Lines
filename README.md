@@ -68,8 +68,6 @@ Finally, an image might be [undistorted](https://docs.opencv.org/master/d9/d0c/g
 img = cv.imread("image.jpg")
 undistored_img = cv.undistort(img, mtx, dist, None, mtx)
 ```
-
-Example:
 ![Example](output_images/undist_chessboard.png)
 
 The full source code for the step is in the file [camera.py](https://github.com/alexander-stadnikov/CarND-Advanced-Lane-Lines/blob/main/pipeline/camera.py).
