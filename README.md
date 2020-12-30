@@ -3,7 +3,6 @@
 This project is the continuation of the [Finding Lane Lines](https://github.com/alexander-stadnikov/CarND-Finding-Lane-Lines). This time the goal is to identify curved lane lines. I’ll recognize lines based on the perspective transform to a bird’s eye view of an original frame from the camera.
 
 ## The Project Overview
----
 
 The goals / steps of this project are the following:
 
@@ -18,13 +17,11 @@ The goals / steps of this project are the following:
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
 ## The Project Layout
----
 
 The project is organized as a Python application. The [pipeline](https://github.com/alexander-stadnikov/CarND-Advanced-Lane-Lines/tree/main/pipeline) was implemented as a Python package.
 The application uses the pipeline to perform all computations and is located in the file [project.py](https://github.com/alexander-stadnikov/CarND-Advanced-Lane-Lines/blob/main/project.py).
 
 ## Camera Calibration and Image Undistortion
----
 
 The Camera Calibration is needed to avoid the [Optic Distortion](https://en.wikipedia.org/wiki/Distortion_(optics)) effect. Each camera has it's own distortion coefficients. These coefficients might be computed with a known geometric pattern. This project contains pictures of the chessboard patterns with high contrast and known geometry. The pattern's size is the number of inner corners – there're nine in each row and six corners in each column.
 
@@ -73,7 +70,6 @@ undistored_img = cv.undistort(img, mtx, dist, None, mtx)
 ```
 
 Example:
-
 ![Example](output_images/undist_chessboard.png)
 
 The full source code for the step is in the file [camera.py](https://github.com/alexander-stadnikov/CarND-Advanced-Lane-Lines/blob/main/pipeline/camera.py).
