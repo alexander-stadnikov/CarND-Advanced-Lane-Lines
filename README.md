@@ -70,4 +70,22 @@ undistored_img = cv.undistort(img, mtx, dist, None, mtx)
 ```
 ![Example](output_images/undist_chessboard.png)
 
+### Possible improvements
+
+The chessboard pattern has a few disadvantages. For example, it’s necessary for all corners to be visible. It also depends on many photos. In the provided pictures, it’s not possible to recognize the pattern on the next images:
+
+* camera_cal/calibration1.jpg
+* camera_cal/calibration4.jpg
+* camera_cal/calibration5.jpg
+
+There’s a better pattern named [ChArUco](https://docs.opencv.org/3.4/df/d4a/tutorial_charuco_detection.html#:~:text=Charuco%20definition,in%20terms%20of%20subpixel%20accuracy.) pattern. It’s the same chessboard, but it contains “markers” from a predefined “dictionary”. Each symbol looks like a QR-code, and the position is known. It means, even if the pattern only partially visible it’s possible to find some matched corners.
+
+As the next improvement, it’s possible to use not pictures but video input. The video file is just a set of frames that could be processed separately.
+
+I made a simple video with my iPhone for the demonstration. When the internal matrix and distortion coefficients, I just augmented these markers and their coordinate systems.
+
+![ChArUco example](output_images/detected_charuco.gif)
+
+But for the project, of course, provided images will be used for the camera calibration.
+
 The full source code for the step is in the file [camera.py](https://github.com/alexander-stadnikov/CarND-Advanced-Lane-Lines/blob/main/pipeline/camera.py).
