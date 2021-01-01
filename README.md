@@ -86,6 +86,9 @@ I made a simple video with my iPhone for the demonstration. When the internal ma
 
 ![ChArUco example](output_images/detected_charuco.gif)
 
-But for the project, of course, provided images will be used for the camera calibration.
+In a real production environment, these actions might be done by a robot.
+
+
+**For the project only provided images will be used for the camera calibration.**
 
 The full source code for the step is in the file [camera.py](https://github.com/alexander-stadnikov/CarND-Advanced-Lane-Lines/blob/main/pipeline/camera.py).
