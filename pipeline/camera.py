@@ -27,7 +27,7 @@ class Camera:
         return self._calibrated
 
     def undistort(self, img: Any):
-        """ Returns undistorted image. """
+        """ Returns undistorted image. Takes grayscaled image as an input. """
         return cv.undistort(img, self.mtx, self.dist, None, self.mtx)
 
     def calibrate_with_chessboard(self, images: List[str], pattern_size: Tuple[int, int], output: str = None):
