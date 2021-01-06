@@ -1,13 +1,10 @@
 from __future__ import annotations
-from typing import Tuple
 from functools import lru_cache
 
 import cv2 as cv
 import numpy as np
 
-
-Direction = Tuple[int, int]
-Threshold = Tuple[int, int]
+from .types import *
 
 
 class Sobel:
