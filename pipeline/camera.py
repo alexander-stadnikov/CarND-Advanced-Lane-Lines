@@ -22,12 +22,12 @@ class Camera:
             self._calibrated = True
 
     @property
-    def calibrated(self):
+    def calibrated(self) -> bool:
         """ The property is equal true if the camera calibrated """
         return self._calibrated
 
     def undistort(self, img: Any):
-        """ Returns undistorted image. Takes grayscaled image as an input. """
+        """ Returns undistorted image. Takes gray scaled image as an input. """
         return cv.undistort(img, self.mtx, self.dist, None, self.mtx)
 
     def calibrate_with_chessboard(self, images: List[str], pattern_size: Tuple[int, int], output: str = None):
