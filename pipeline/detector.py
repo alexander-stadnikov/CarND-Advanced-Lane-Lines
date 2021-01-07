@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import cv2 as cv
-
+import matplotlib.pyplot as plt
 
 @dataclass
 class SlidingWindowsConfig:
@@ -11,12 +11,19 @@ class SlidingWindowsConfig:
     window_margin: int
     min_pixels_for_detect: int
 
-
 class Detector:
     """ Finds lane lines, their curvature, CCP and overlays if needed. """
     
     def __init__(self, sliding_windows_config: SlidingWindowsConfig):
         self.cfg = sliding_windows_config
+        self.left_fit = None
+        self.right_fit = None
+
+    def find_lane_lines(self, img):
+        if self.left_fit is None or self.right_fit is None:
+            return self._fit_polynomial(img)
+        else:
+            return self._search_around_poly(img)
 
     def _find_bottom_peaks(self, img):        
         histogram = np.sum(img[img.shape[0] // 2:, :], axis=0)
@@ -85,20 +92,18 @@ class Detector:
 
         return leftx, lefty, rightx, righty, out_img
 
-
-    def fit_polynomial(self, img):
-        # Find our lane pixels first
+    def _fit_polynomial(self, img):
         leftx, lefty, rightx, righty, out_img = self._find_lane_pixels(img)
 
         ### TO-DO: Fit a second order polynomial to each using `np.polyfit` ###
-        left_fit = np.polyfit(lefty, leftx, 2)
-        right_fit = np.polyfit(righty, rightx, 2)
+        self.left_fit = np.polyfit(lefty, leftx, 2)
+        self.right_fit = np.polyfit(righty, rightx, 2)
 
         # Generate x and y values for plotting
         ploty = np.linspace(0, img.shape[0]-1, img.shape[0] )
         try:
-            left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
-            right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+            left_fitx = self.left_fit[0]*ploty**2 + self.left_fit[1]*ploty + self.left_fit[2]
+            right_fitx = self.right_fit[0]*ploty**2 + self.right_fit[1]*ploty + self.right_fit[2]
         except TypeError:
             # Avoids an error if `left` and `right_fit` are still none or incorrect
             print('The function failed to fit a line!')
@@ -115,3 +120,81 @@ class Detector:
         # plt.plot(right_fitx, ploty, color='yellow')
 
         return out_img
+
+    def _fit_poly(self, img_shape, leftx, lefty, rightx, righty):
+        ### TO-DO: Fit a second order polynomial to each with np.polyfit() ###
+        self.left_fit = np.polyfit(lefty, leftx, 2)
+        self.right_fit = np.polyfit(righty, rightx, 2)
+        # Generate x and y values for plotting
+        ploty = np.linspace(0, img_shape[0]-1, img_shape[0])
+        ### TO-DO: Calc both polynomials using ploty, left_fit and right_fit ###
+        left_fitx = self.left_fit[0]*ploty**2 + self.left_fit[1]*ploty + self.left_fit[2]
+        right_fitx = self.right_fit[0]*ploty**2 + self.right_fit[1]*ploty + self.right_fit[2]
+        
+        return left_fitx, right_fitx, ploty
+
+    def _search_around_poly(self, img):
+        # HYPERPARAMETER
+        # Choose the width of the margin around the previous polynomial to search
+        # The quiz grader expects 100 here, but feel free to tune on your own!
+        margin = 100
+
+        # Grab activated pixels
+        nonzero = img.nonzero()
+        nonzeroy = np.array(nonzero[0])
+        nonzerox = np.array(nonzero[1])
+        
+        ### TO-DO: Set the area of search based on activated x-values ###
+        ### within the +/- margin of our polynomial function ###
+        ### Hint: consider the window areas for the similarly named variables ###
+        ### in the previous quiz, but change the windows to our new search area ###
+        left_curve = self.left_fit[0]*(nonzeroy**2) + self.left_fit[1]*nonzeroy + self.left_fit[2]
+        left_lane_inds = (
+            (nonzerox > (left_curve - margin))
+            & (nonzerox < (left_curve + margin))
+        )
+        right_curve = self.right_fit[0]*(nonzeroy**2) + self.right_fit[1]*nonzeroy + self.right_fit[2]
+        right_lane_inds = (
+            (nonzerox > (right_curve - margin))
+            & (nonzerox < (right_curve + margin))
+        )
+        
+        # Again, extract left and right line pixel positions
+        leftx = nonzerox[left_lane_inds]
+        lefty = nonzeroy[left_lane_inds] 
+        rightx = nonzerox[right_lane_inds]
+        righty = nonzeroy[right_lane_inds]
+
+        # Fit new polynomials
+        left_fitx, right_fitx, ploty = self._fit_poly(img.shape, leftx, lefty, rightx, righty)
+        
+        ## Visualization ##
+        # Create an image to draw on and an image to show the selection window
+        out_img = np.dstack((img, img, img))*255
+        window_img = np.zeros_like(out_img)
+        # Color in left and right line pixels
+        out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+        out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+
+        # Generate a polygon to illustrate the search window area
+        # And recast the x and y points into usable format for cv2.fillPoly()
+        left_line_window1 = np.array([np.transpose(np.vstack([left_fitx-margin, ploty]))])
+        left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_fitx+margin, 
+                                ploty])))])
+        left_line_pts = np.hstack((left_line_window1, left_line_window2))
+        right_line_window1 = np.array([np.transpose(np.vstack([right_fitx-margin, ploty]))])
+        right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_fitx+margin, 
+                                ploty])))])
+        right_line_pts = np.hstack((right_line_window1, right_line_window2))
+
+        # Draw the lane onto the warped blank image
+        cv.fillPoly(window_img, np.int_([left_line_pts]), (0,255, 0))
+        cv.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
+        result = cv.addWeighted(out_img, 1, window_img, 0.3, 0)
+        
+        # Plot the polynomial lines onto the image
+        plt.plot(left_fitx, ploty, color='yellow')
+        plt.plot(right_fitx, ploty, color='yellow')
+        ## End visualization steps ##
+        
+        return result
