@@ -4,7 +4,7 @@ from functools import lru_cache
 import cv2 as cv
 import numpy as np
 
-from .types import *
+from pipeline.types import *
 
 
 class Sobel:
