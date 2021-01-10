@@ -157,13 +157,13 @@ def pipeline_frame(img):
     # draw_dots(line_img, sobel)
     poly = detector.find_lane_lines(transform.warp(poi))
     poly_unwarp = transform.unwarp(poly)
-    draw_dots(line_img, poly_unwarp)
+    # draw_dots(line_img, poly_unwarp)
     result = weighted_img(undistorted_img, poly_unwarp)
 
     # result = weighted_img(undistorted_img, line_img)
 
     # f, ax = plt.subplots(1, 1, figsize=(24, 7))
-    # ax.imshow(result)
+    # ax.imshow(poly_unwarp)
     # ax.set_title('Original Image', fontsize=50)
     # f.tight_layout()
     # plt.show()
@@ -188,7 +188,7 @@ def pipeline_frame(img):
 from moviepy.editor import VideoFileClip
 
 v_name = "project_video"
-# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(0,2)
+# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(0,5)
 clip1 = VideoFileClip(f"./{v_name}.mp4")
 white_clip = clip1.fl_image(pipeline_frame)
 white_clip.write_videofile(f"./{v_name}_out.mp4", audio=False)

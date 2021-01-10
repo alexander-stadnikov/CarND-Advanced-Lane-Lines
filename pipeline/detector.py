@@ -20,7 +20,8 @@ class Detector:
         self.left_line.detect(img, nonzerox, nonzeroy)
         self.right_line.detect(img, nonzerox, nonzeroy)
 
-        out_img = np.dstack((img, img, img)) * 255
+        empty_img = np.zeros_like(img).astype(np.uint8)
+        out_img = np.dstack((empty_img, empty_img, empty_img))
         window_img = np.zeros_like(out_img)
 
         y = np.linspace(0, img.shape[0] - 1, img.shape[0])
