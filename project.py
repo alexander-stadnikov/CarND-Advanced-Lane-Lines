@@ -96,18 +96,21 @@ def remove_shadows(img):
 
 
 offset = 200
-bottom_src = 680
 bottom = 720
 right = 1280
 apex_y = 450
+
 # apex_y = 600
 apex_x = 1280//2
 # apex_offset = 350
-apex_offset = 55
+apex_offset = 40
+# src = np.float32([[apex_x - apex_offset, apex_y], [apex_x + apex_offset, apex_y],
+#     [offset, bottom], [1280-offset, bottom]])
 src = np.float32([[apex_x - apex_offset, apex_y], [apex_x + apex_offset, apex_y],
-    [offset, bottom_src], [1280-offset, bottom_src]])
-dst_x_left = 200
-dst_x_right = 1280 - dst_x_left
+    [100, bottom], [1180, bottom]])
+
+dst_x_left = 300
+dst_x_right = 900
 dst = np.float32([
     [dst_x_left, 0], [dst_x_right, 0],
     [dst_x_left, bottom], [dst_x_right, bottom],
@@ -115,8 +118,23 @@ dst = np.float32([
 transform = PerspectiveTransform(src,dst)
 mask = None
 detector = Detector(
-    SlidingWindowsConfig(9, 100, 50)
+    SlidingWindowsConfig(9, 100, 50),
+    scale=(3.7 / 515, # meters per pixel in x dimension
+           3 / 50   # meters per pixel in y dimension
+    ),
+    debug=False
 )
+
+def show_plot(img, cmap=0):
+    f, ax = plt.subplots(1, 1, figsize=(24, 7))
+    if cmap==0:
+        ax.imshow(img)
+    else:
+        ax.imshow(img, cmap='gray')
+    ax.set_title('Original Image', fontsize=50)
+    f.tight_layout()
+    plt.show()
+
 def pipeline_frame(img):
     global transform, mask, apex_y, apex_x, apex_offset
     # print(img.shape)
@@ -151,7 +169,7 @@ def pipeline_frame(img):
             [(0, 720), (apex_x - apex_offset, apex_y), (apex_x + apex_offset, apex_y), (1280, 720)]
         ], dtype=np.int32))
 
-    poi = cv.bitwise_and(poi, mask)
+    # poi = cv.bitwise_and(poi, mask)
 
     line_img = np.zeros((undistorted_img.shape[0], undistorted_img.shape[1], 3), dtype=np.uint8)
     # draw_dots(line_img, sobel)
@@ -160,16 +178,22 @@ def pipeline_frame(img):
     # draw_dots(line_img, poly_unwarp)
     result = weighted_img(undistorted_img, poly_unwarp)
 
+    font                   = cv.FONT_HERSHEY_SIMPLEX
+    bottomLeftCornerOfText = (10, 50)
+    fontScale              = 1
+    fontColor              = (255,255,255)
+    lineType               = 2
+
+    cv.putText(result, f"Lane curvature: {int(np.abs(detector.curvature(720)))}(m)", bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
+    # show_plot(result)
     # result = weighted_img(undistorted_img, line_img)
 
-    # f, ax = plt.subplots(1, 1, figsize=(24, 7))
-    # ax.imshow(poly_unwarp)
-    # ax.set_title('Original Image', fontsize=50)
-    # f.tight_layout()
-    # plt.show()
 
-    # show(result)
+    # show_plot(poi)
 
+    # show_plot(poly)
+    # show_plot(transform.warp(poi), 1)
+    # show_plot(result)
     # f, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, figsize=(24, 7))
     # ax1.imshow(img)
     # ax1.set_title('Original Image', fontsize=50)
@@ -187,8 +211,10 @@ def pipeline_frame(img):
 
 from moviepy.editor import VideoFileClip
 
-v_name = "project_video"
-# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(0,5)
+v_name = "harder_challenge_video"
+# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(15,20)
+# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(45, 50)
+# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(4, 5)
 clip1 = VideoFileClip(f"./{v_name}.mp4")
 white_clip = clip1.fl_image(pipeline_frame)
 white_clip.write_videofile(f"./{v_name}_out.mp4", audio=False)
