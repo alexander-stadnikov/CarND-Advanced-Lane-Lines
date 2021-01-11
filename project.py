@@ -3,7 +3,7 @@ import cv2 as cv
 import numpy as np
 
 from pipeline import Camera, Sobel, PerspectiveTransform
-from pipeline import Detector, SlidingWindowsConfig
+from pipeline import Lane, SlidingWindowsConfig
 from pipeline.tools import h_channel_from_rgb, s_channel_from_rgb
 
 import matplotlib.pyplot as plt
@@ -117,7 +117,7 @@ dst = np.float32([
 ])
 transform = PerspectiveTransform(src,dst)
 mask = None
-detector = Detector(
+lane = Lane(
     SlidingWindowsConfig(9, 100, 50),
     scale=(3.7 / 515, # meters per pixel in x dimension
            3 / 100   # meters per pixel in y dimension
@@ -139,13 +139,6 @@ def show_plot(img, cmap=0):
 
 def pipeline_frame(img):
 
-    # detector = Detector(
-    #     SlidingWindowsConfig(9, 100, 50),
-    #     scale=(3.7 / 515, # meters per pixel in x dimension
-    #         3 / 100   # meters per pixel in y dimension
-    #     ),
-    #     debug=True
-    # )
     global transform, mask, apex_y, apex_x, apex_offset
     # print(img.shape)
     direction_thrashold = (50, 100)
@@ -180,11 +173,11 @@ def pipeline_frame(img):
             [(200, 720), (apex_x - apex_offset, apex_y), (apex_x + apex_offset, apex_y), (1180, 720)]
         ], dtype=np.int32))
 
-    poi = cv.bitwise_and(poi, mask)
+    # poi = cv.bitwise_and(poi, mask)
 
     line_img = np.zeros((undistorted_img.shape[0], undistorted_img.shape[1], 3), dtype=np.uint8)
     # draw_dots(line_img, sobel)
-    poly = detector.find_lane_lines(transform.warp(poi))
+    poly = lane.find_lane_lines(transform.warp(poi))
     poly_unwarp = transform.unwarp(poly)
     # draw_dots(line_img, poly_unwarp)
     frame = weighted_img(undistorted_img, poly_unwarp)
@@ -198,10 +191,10 @@ def pipeline_frame(img):
     lineType               = 2
 
     try:
-        cv.putText(frame, f"Lane curvature: {int(np.abs(detector.curvature(720)))}(m)", bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
+        cv.putText(frame, f"Lane curvature: {int(np.abs(lane.curvature(720)))}(m)", bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
     except:
         cv.putText(frame, f"Lane curvature: NaN", bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
-    cv.putText(frame, f"Car offset: {detector.car_offset((1280, 720)):.2f}(m)", (10, 100), font, fontScale, fontColor, lineType)
+    cv.putText(frame, f"Car offset: {lane.car_offset((1280, 720)):.2f}(m)", (10, 100), font, fontScale, fontColor, lineType)
     # show_plot(result)
     # result = weighted_img(undistorted_img, line_img)
 
@@ -228,7 +221,7 @@ def pipeline_frame(img):
 
 from moviepy.editor import VideoFileClip
 
-v_name = "challenge_video"
+v_name = "project_video"
 
 # for f in glob.glob("./test_images/*.jpg"):
 #     img = plt.imread(f)

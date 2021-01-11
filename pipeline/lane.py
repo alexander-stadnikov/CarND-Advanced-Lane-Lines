@@ -7,7 +7,7 @@ from pipeline.line import LinePosition, Line
 from pipeline.sliding_window_config import SlidingWindowsConfig
 
 
-class Detector:
+class Lane:
     """ Finds lane lines, their curvature, CCP and overlays if needed. """
 
     def __init__(self, sliding_windows_config: SlidingWindowsConfig, scale: Tuple[float, float], debug: bool = False):
