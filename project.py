@@ -122,10 +122,12 @@ detector = Detector(
     scale=(3.7 / 515, # meters per pixel in x dimension
            3 / 100   # meters per pixel in y dimension
     ),
-    debug=False
+    debug=True
 )
 
 def show_plot(img, cmap=0):
+
+
     f, ax = plt.subplots(1, 1, figsize=(24, 7))
     if cmap==0:
         ax.imshow(img)
@@ -136,6 +138,14 @@ def show_plot(img, cmap=0):
     plt.show()
 
 def pipeline_frame(img):
+
+    # detector = Detector(
+    #     SlidingWindowsConfig(9, 100, 50),
+    #     scale=(3.7 / 515, # meters per pixel in x dimension
+    #         3 / 100   # meters per pixel in y dimension
+    #     ),
+    #     debug=True
+    # )
     global transform, mask, apex_y, apex_x, apex_offset
     # print(img.shape)
     direction_thrashold = (50, 150)
@@ -176,7 +186,9 @@ def pipeline_frame(img):
     poly = detector.find_lane_lines(transform.warp(poi))
     poly_unwarp = transform.unwarp(poly)
     # draw_dots(line_img, poly_unwarp)
-    result = weighted_img(undistorted_img, poly_unwarp)
+    frame = weighted_img(undistorted_img, poly_unwarp)
+    poly = cv.resize(poly, None, fx=0.5, fy=0.5, interpolation=cv.INTER_CUBIC)
+    frame[:poly.shape[0], img.shape[1]//2:] = poly
 
     font                   = cv.FONT_HERSHEY_SIMPLEX
     bottomLeftCornerOfText = (10, 50)
@@ -184,17 +196,20 @@ def pipeline_frame(img):
     fontColor              = (255,255,255)
     lineType               = 2
 
-    cv.putText(result, f"Lane curvature: {int(np.abs(detector.curvature(720)))}(m)", bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
-    cv.putText(result, f"Car offset: {detector.car_offset((1280, 720)):.2f}(m)", (10, 100), font, fontScale, fontColor, lineType)
+    try:
+        cv.putText(frame, f"Lane curvature: {int(np.abs(detector.curvature(720)))}(m)", bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
+    except:
+        cv.putText(frame, f"Lane curvature: NaN", bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
+    cv.putText(frame, f"Car offset: {detector.car_offset((1280, 720)):.2f}(m)", (10, 100), font, fontScale, fontColor, lineType)
     # show_plot(result)
     # result = weighted_img(undistorted_img, line_img)
 
 
     # show_plot(poi)
 
+
     # show_plot(poly)
-    # show_plot(transform.warp(poi), 1)
-    # show_plot(result)
+    # show_plot(frame)
     # f, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, figsize=(24, 7))
     # ax1.imshow(img)
     # ax1.set_title('Original Image', fontsize=50)
@@ -206,19 +221,19 @@ def pipeline_frame(img):
     # f.tight_layout()
     # plt.show()
 
-    return result
+    return frame
 
 
 
 from moviepy.editor import VideoFileClip
 
 v_name = "project_video"
-# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(15,20)
-# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(47, 50)
-# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(4, 5)
+
+# for f in glob.glob("./test_images/*.jpg"):
+#     img = plt.imread(f)
+#     pipeline_frame(img)
+
+# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(5, 16)
 clip1 = VideoFileClip(f"./{v_name}.mp4")
 white_clip = clip1.fl_image(pipeline_frame)
 white_clip.write_videofile(f"./{v_name}_out.mp4", audio=False)
-# for f in glob.glob("./test_images/straight_lines2.jpg"):
-#     img = plt.imread(f)
-#     pipeline_frame(img)

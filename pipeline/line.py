@@ -23,21 +23,42 @@ class Line():
         self.cfg = sliding_windows_config
         self.debug = debug
 
+    def reset(self):
+        self.fits.clear()
+
+    def store_last_detect(self):
+        self.fits.append((self.a, self.b, self.c))
+
     def detect(self, img, nonzero_x, nonzero_y):
         if not self.fits:
             return self._detect_sliding_windows(img, nonzero_x, nonzero_y)
         else:
             return self._detect_around_polynome(img, nonzero_x, nonzero_y)
 
+    def _mid_coefficients(self):
+        return np.mean(self.fits, axis=0)
+
     def curve(self, y):
-        return self.a*(y**2) + self.b*y + self.c
+        a, b, c = self._mid_coefficients()
+        return a*(y**2) + b*y + c
 
     def curvature(self, scale: Tuple[float, float], y: int) -> float:
         xs, ys = scale
         k2 = xs/ys
         k1 = k2/ys
-        y = float(y) * ys
-        return k1*self.a*(y**2) + k2*self.b*y + self.c
+        # return k1*self.a*(y**2) + k2*self.b*y + self.c
+        a, b, c = self._mid_coefficients()
+        return ((1 + (2*a*y*ys + b)**2)**1.5) / np.absolute(2*a)
+
+    def curve_last(self, y):
+        return self.a*(y**2) + self.b*y + self.c
+
+    def curvature_last(self, scale: Tuple[float, float], y: int) -> float:
+        xs, ys = scale
+        k2 = xs/ys
+        k1 = k2/ys
+        # return k1*self.a*(y**2) + k2*self.b*y + self.c
+        return ((1 + (2*self.a*y*ys + self.b)**2)**1.5) / np.absolute(2*self.a)
 
     def _detect_sliding_windows(self, img, nonzero_x, nonzero_y):
         current_x = self._find_bottom_pos(img)
@@ -56,21 +77,19 @@ class Line():
             if self.debug:
                 cv.rectangle(out_img,(win_x_bottom,win_y_bottom),(win_x_top,win_y_top),(0,255,0), 2)
 
-            good_y = (win_y_bottom <= nonzero_y) & (nonzero_y < win_y_top)
-            good_inds = (good_y & (win_x_bottom <= nonzero_x)
-                & (nonzero_x < win_x_top)).nonzero()[0]
+            good_y = (nonzero_y >= win_y_bottom) & (nonzero_y < win_y_top)
+            good_inds = (good_y & (nonzero_x >= win_x_bottom) & (nonzero_x < win_x_top)).nonzero()[0]
 
-            inds.append(good_inds)
             if len(good_inds) > self.cfg.min_pixels_for_detect:
+                inds.append(good_inds)
                 current_x = np.int(np.mean(nonzero_x[good_inds]))
 
         try:
             inds = np.concatenate(inds)
+            self._add_fit(nonzero_x[inds], nonzero_y[inds])
         except ValueError:
             print("Unable to concatenate indices after Sliding Window Algorithm")
-            pass
 
-        self._add_fit(nonzero_x[inds], nonzero_y[inds])
         return out_img if self.debug else None
 
     def _find_bottom_pos(self, img):
@@ -98,5 +117,12 @@ class Line():
         return out_img
 
     def _add_fit(self, x, y):
-        self.fits.append(np.polyfit(y, x, 2))
-        self.a, self.b, self.c = np.mean(self.fits, axis=0)
+        # self.fits.append(np.polyfit(y, x, 2))
+        # self.a, self.b, self.c = np.mean(self.fits, axis=0)
+        try:
+            self.a, self.b, self.c = np.polyfit(y, x, 2)
+        except:
+            if self.fits:
+                self.a, self.b, self.c = self.fits[-1]
+            else:
+                self.a, self.b, self.c = 0, 0, 0
