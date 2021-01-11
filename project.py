@@ -148,7 +148,7 @@ def pipeline_frame(img):
     # )
     global transform, mask, apex_y, apex_x, apex_offset
     # print(img.shape)
-    direction_thrashold = (50, 150)
+    direction_thrashold = (50, 100)
     x = (1, 0)
     y = (0, 1)
 
@@ -156,11 +156,12 @@ def pipeline_frame(img):
     undistorted_img = camera.undistort(img)
 
     gray = cv.cvtColor(undistorted_img, cv.COLOR_RGB2GRAY)
-
+    sobel_src = cv.cvtColor(np.copy(img), cv.COLOR_RGB2HLS).astype(np.float)
+    s = sobel_src[:, :, 2]
     s = Sobel(gray, kernel_size=3)\
         .by_direction(x, direction_thrashold)\
         .by_direction(y, direction_thrashold)\
-        .by_magnitude(x, y, (100, 200))\
+        .by_magnitude(x, y, (50, 100))\
         .by_angle(x, y, (0.7, 1.3))
     sobel = s.build(((s[0] == 1) & (s[1] == 1)) | ((s[2] == 1) & (s[3] == 1)))
     # sobel = s.build(((s[3] == 1)))
@@ -169,17 +170,17 @@ def pipeline_frame(img):
     h_channel = h_channel_from_rgb(undistorted_img, (90, 255))
 
     poi = np.zeros_like(s_channel)
-    poi[((s_channel == 1) & (h_channel != 1)) | (sobel == 1)] = 1
-    # poi[(s_channel == 1)] = 1
+    # poi[((s_channel == 1) & (h_channel != 1)) | (sobel == 1)] = 1
+    poi[(s_channel == 1) | (sobel == 1)] = 1
     # poi[(sobel == 1)] = 1
     # poi[(h_channel == 1)] = 1
 
     if mask is None:
         mask = get_mask(poi, np.array([
-            [(0, 720), (apex_x - apex_offset, apex_y), (apex_x + apex_offset, apex_y), (1280, 720)]
+            [(200, 720), (apex_x - apex_offset, apex_y), (apex_x + apex_offset, apex_y), (1180, 720)]
         ], dtype=np.int32))
 
-    # poi = cv.bitwise_and(poi, mask)
+    poi = cv.bitwise_and(poi, mask)
 
     line_img = np.zeros((undistorted_img.shape[0], undistorted_img.shape[1], 3), dtype=np.uint8)
     # draw_dots(line_img, sobel)
@@ -227,7 +228,7 @@ def pipeline_frame(img):
 
 from moviepy.editor import VideoFileClip
 
-v_name = "project_video"
+v_name = "challenge_video"
 
 # for f in glob.glob("./test_images/*.jpg"):
 #     img = plt.imread(f)
