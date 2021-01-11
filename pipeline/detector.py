@@ -51,3 +51,10 @@ class Detector:
 
     def curvature(self, y: int) -> int:
         return (self.left_line.curvature(self.scale, y) + self.right_line.curvature(self.scale, y)) // 2
+
+    def car_offset(self, frame_size: Tuple[int, int]) -> float:
+        x, y = frame_size
+        left_line_pos = self.left_line.curve(y)
+        right_line_pos = self.right_line.curve(y)
+        lane_center = np.abs(left_line_pos - right_line_pos)//2 + left_line_pos
+        return self.scale[0]*np.abs(x//2 - lane_center)

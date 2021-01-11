@@ -103,14 +103,14 @@ apex_y = 450
 # apex_y = 600
 apex_x = 1280//2
 # apex_offset = 350
-apex_offset = 40
+apex_offset = 58
 # src = np.float32([[apex_x - apex_offset, apex_y], [apex_x + apex_offset, apex_y],
 #     [offset, bottom], [1280-offset, bottom]])
 src = np.float32([[apex_x - apex_offset, apex_y], [apex_x + apex_offset, apex_y],
     [100, bottom], [1180, bottom]])
 
 dst_x_left = 300
-dst_x_right = 900
+dst_x_right = 980
 dst = np.float32([
     [dst_x_left, 0], [dst_x_right, 0],
     [dst_x_left, bottom], [dst_x_right, bottom],
@@ -120,7 +120,7 @@ mask = None
 detector = Detector(
     SlidingWindowsConfig(9, 100, 50),
     scale=(3.7 / 515, # meters per pixel in x dimension
-           3 / 50   # meters per pixel in y dimension
+           3 / 100   # meters per pixel in y dimension
     ),
     debug=False
 )
@@ -185,6 +185,7 @@ def pipeline_frame(img):
     lineType               = 2
 
     cv.putText(result, f"Lane curvature: {int(np.abs(detector.curvature(720)))}(m)", bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
+    cv.putText(result, f"Car offset: {detector.car_offset((1280, 720)):.2f}(m)", (10, 100), font, fontScale, fontColor, lineType)
     # show_plot(result)
     # result = weighted_img(undistorted_img, line_img)
 
@@ -211,9 +212,9 @@ def pipeline_frame(img):
 
 from moviepy.editor import VideoFileClip
 
-v_name = "harder_challenge_video"
+v_name = "project_video"
 # clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(15,20)
-# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(45, 50)
+# clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(47, 50)
 # clip1 = VideoFileClip(f"./{v_name}.mp4").subclip(4, 5)
 clip1 = VideoFileClip(f"./{v_name}.mp4")
 white_clip = clip1.fl_image(pipeline_frame)
