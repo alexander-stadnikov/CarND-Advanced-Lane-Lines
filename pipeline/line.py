@@ -46,7 +46,6 @@ class Line():
         xs, ys = scale
         k2 = xs/ys
         k1 = k2/ys
-        # return k1*self.a*(y**2) + k2*self.b*y + self.c
         a, b, c = self._mid_coefficients()
         return ((1 + (2*a*y*ys + b)**2)**1.5) / np.absolute(2*a)
 
@@ -57,7 +56,6 @@ class Line():
         xs, ys = scale
         k2 = xs/ys
         k1 = k2/ys
-        # return k1*self.a*(y**2) + k2*self.b*y + self.c
         return ((1 + (2*self.a*y*ys + self.b)**2)**1.5) / np.absolute(2*self.a)
 
     def _detect_sliding_windows(self, img, nonzero_x, nonzero_y):
@@ -88,7 +86,7 @@ class Line():
             inds = np.concatenate(inds)
             self._add_fit(nonzero_x[inds], nonzero_y[inds])
         except ValueError:
-            print("Unable to concatenate indices after Sliding Window Algorithm")
+            pass
 
         return out_img if self.debug else None
 
@@ -117,8 +115,6 @@ class Line():
         return out_img
 
     def _add_fit(self, x, y):
-        # self.fits.append(np.polyfit(y, x, 2))
-        # self.a, self.b, self.c = np.mean(self.fits, axis=0)
         try:
             self.a, self.b, self.c = np.polyfit(y, x, 2)
         except:
