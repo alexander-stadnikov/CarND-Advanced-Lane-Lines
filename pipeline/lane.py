@@ -45,8 +45,6 @@ class Lane:
         nonzeroy = np.array(nonzero[0])
 
         if self.reset_is_needed:
-            # self.left_line.reset()
-            # self.right_line.reset()
             out_left_img = self.left_line._detect_sliding_windows(img, nonzerox, nonzeroy)
             out_right_img = self.right_line._detect_sliding_windows(img, nonzerox, nonzeroy)
         else:
