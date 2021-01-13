@@ -1,3 +1,4 @@
 {
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "python.pythonPath": "C:\\Users\\alexander.stadnikov\\Anaconda3\\envs\\carnd-term1\\python.exe"
 }

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Tuple, List
+from collections import deque
 
 import cv2 as cv
 import numpy as np
@@ -36,6 +37,8 @@ class Detector:
         self.mask = None if mask is None else np.array([mask], dtype=np.int32)
         self.lane = lane
         self.show_each_frame = show_each_frame
+        self.curvature = deque(maxlen=50)
+        self.offset = deque(maxlen=50)
 
     def pipeline(self, img):
         w, h = img.shape[1::-1]
@@ -44,14 +47,17 @@ class Detector:
         s_channel = s_channel_from_rgb(undistorted_img, self.hls_cfg.s_trashold)
         poi = self._apply_mask(self._poi(sobel, s_channel))
         line_img = np.zeros((h, w, 3), dtype=np.uint8)
-        poly = self.lane.find_lane_lines(self.transform.warp(poi))
-        poly_unwarp = self.transform.unwarp(poly)
+        lane_img, debug_img = self.lane.find_lane_lines(self.transform.warp(poi))
+        poly_unwarp = self.transform.unwarp(lane_img)
         frame = cv.addWeighted(poly_unwarp, 0.8, undistorted_img, 1.0, 0.0)
-        poly = cv.resize(poly, None, fx=0.5, fy=0.5, interpolation=cv.INTER_CUBIC)
-        frame[:poly.shape[0], w//2:] = poly
-        self._print(frame, (10, 50), f"Lane curvature: {int(np.abs(self.lane.curvature(h)))}(m)")
-        self._print(frame, (10, 100), f"Car offset: {self.lane.car_offset((w, h)):.2f}(m)")
+        debug_img = cv.resize(debug_img, None, fx=0.5, fy=0.5, interpolation=cv.INTER_CUBIC)
+        frame[:debug_img.shape[0], w//2:] = debug_img
+        self.curvature.append(np.abs(self.lane.curvature(h)))
+        self.offset.append(self.lane.car_offset((w, h)))
+        self._print(frame, (10, 50), f"Lane curvature: {int(np.mean(self.curvature))}(m)")
+        self._print(frame, (10, 100), f"Car offset: {np.mean(self.offset):.2f}(m)")
         if self.show_each_frame:
+            self._show_plot(self.transform.warp(poi), 1)
             self._show_plot(frame)
         return frame
 
@@ -80,7 +86,7 @@ class Detector:
 
     def _apply_mask(self, poi):
         if self.mask is None:
-            return
+            return poi
 
         mask = np.zeros_like(poi)
         if len(poi.shape) > 2:

@@ -28,16 +28,15 @@ class Lane:
         curvatures_too_differ = (np.abs(left_curvature - right_curvature) > 2000 and min(left_curvature, right_curvature) < 5000)
         distance_too_big = (np.abs(ll.curve_last(bottom) - rl.curve_last(bottom))*self.scale[0] > 5)
         non_parallel = np.abs(ll.a - rl.a) > 0.001
-        if curvatures_too_differ or distance_too_big or non_parallel:
+        self.left_line.store_last_detect()
+        self.right_line.store_last_detect()
+        if ll.fits and rl.fits and (curvatures_too_differ or distance_too_big or non_parallel):
             self.bad_frames += 1
             if self.bad_frames == self.max_bad_frames:
                 self.reset_is_needed = True
             return
         self.bad_frames = 0
         self.reset_is_needed = False
-        self.left_line.store_last_detect()
-        self.right_line.store_last_detect()
-
 
     def find_lane_lines(self, img):
         nonzero = img.nonzero()
@@ -54,8 +53,9 @@ class Lane:
         self._sanity_check()
 
         empty_img = np.zeros_like(img).astype(np.uint8)
-        out_img = np.dstack((empty_img, empty_img, empty_img))
-        window_img = np.zeros_like(out_img)
+        lane_img = np.dstack((empty_img, empty_img, empty_img))
+        debug_img = np.dstack((empty_img, empty_img, empty_img))
+        lane_poly_img = np.zeros_like(lane_img)
 
         y = np.linspace(0, img.shape[0] - 1, img.shape[0])
         left_curve = self.left_line.curve(y)
@@ -63,23 +63,27 @@ class Lane:
         x_left = np.array([np.transpose(np.vstack([left_curve, y]))])
         x_right = np.array([np.flipud(np.transpose(np.vstack([right_curve, y])))])
         points = np.hstack((x_left, x_right))
-        cv.fillPoly(window_img, np.int_([points]), (0, 255, 0))
+        cv.fillPoly(lane_poly_img, np.int_([points]), (0, 255, 0))
 
         if self.debug:
             for d in range(len(nonzero[0])):
                 y, x = nonzero[0][d], nonzero[1][d]
-                cv.circle(out_img, (x,y), radius=0, color=(255, 0, 0), thickness=10)
+                cv.circle(debug_img, (x,y), radius=0, color=(255, 0, 0), thickness=10)
 
-        out_img = cv.addWeighted(out_img, 1, window_img, 0.3, 0)
+        lane_img = cv.addWeighted(lane_img, 1, lane_poly_img, 0.3, 0)
 
-        # if self.debug:
-        #     out_img = cv.addWeighted(out_img, 1, out_left_img, 0.3, 0)
-        #     out_img = cv.addWeighted(out_img, 1, out_right_img, 0.3, 0)
+        if self.debug:
+            debug_img = cv.addWeighted(debug_img, 1, out_left_img, 0.3, 0)
+            debug_img = cv.addWeighted(debug_img, 1, out_right_img, 0.3, 0)
 
-        return out_img
+        return lane_img, debug_img
 
     def curvature(self, y: int) -> int:
-        return (self.left_line.curvature(self.scale, y) + self.right_line.curvature(self.scale, y)) // 2
+        return np.average([
+            self.left_line.curvature(self.scale, y),
+            self.right_line.curvature(self.scale, y)
+        ])
+
 
     def car_offset(self, frame_size: Tuple[int, int]) -> float:
         x, y = frame_size
