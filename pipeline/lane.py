@@ -19,8 +19,8 @@ class Lane:
         self.max_bad_frames = 5
         self.reset_is_needed = True
 
-    def _sanity_check(self):
-        bottom = 720
+    def _sanity_check(self, img):
+        bottom = img.shape[0]
         ll = self.left_line
         rl = self.right_line
         left_curvature = ll.curvature_last(self.scale, bottom)
@@ -28,8 +28,6 @@ class Lane:
         curvatures_too_differ = (np.abs(left_curvature - right_curvature) > 2000 and min(left_curvature, right_curvature) < 5000)
         distance_too_big = (np.abs(ll.curve_last(bottom) - rl.curve_last(bottom))*self.scale[0] > 5)
         non_parallel = np.abs(ll.a - rl.a) > 0.001
-        self.left_line.store_last_detect()
-        self.right_line.store_last_detect()
         if ll.fits and rl.fits and (curvatures_too_differ or distance_too_big or non_parallel):
             self.bad_frames += 1
             if self.bad_frames == self.max_bad_frames:
@@ -37,6 +35,9 @@ class Lane:
             return
         self.bad_frames = 0
         self.reset_is_needed = False
+        self.left_line.store_last_detect()
+        self.right_line.store_last_detect()
+
 
     def find_lane_lines(self, img):
         nonzero = img.nonzero()
@@ -50,7 +51,7 @@ class Lane:
             out_left_img = self.left_line._detect_around_polynome(img, nonzerox, nonzeroy)
             out_right_img = self.right_line._detect_around_polynome(img, nonzerox, nonzeroy)
 
-        self._sanity_check()
+        self._sanity_check(img)
 
         empty_img = np.zeros_like(img).astype(np.uint8)
         lane_img = np.dstack((empty_img, empty_img, empty_img))

@@ -6,7 +6,7 @@ import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pipeline.tools import s_channel_from_rgb
+from pipeline.tools import s_channel_from_rgb, h_channel_from_rgb
 from pipeline.transform import PerspectiveTransform
 from pipeline.camera import Camera
 from pipeline.lane import Lane
@@ -37,15 +37,28 @@ class Detector:
         self.mask = None if mask is None else np.array([mask], dtype=np.int32)
         self.lane = lane
         self.show_each_frame = show_each_frame
-        self.curvature = deque(maxlen=50)
-        self.offset = deque(maxlen=50)
+        self.curvature = deque(maxlen=10)
+        self.offset = deque(maxlen=10)
 
     def pipeline(self, img):
         w, h = img.shape[1::-1]
         undistorted_img = self.camera.undistort(img)
         sobel = self._sobel(undistorted_img)
+        # s_channel = s_channel_from_rgb(undistorted_img, (200, 255))
         s_channel = s_channel_from_rgb(undistorted_img, self.hls_cfg.s_trashold)
+        # h_channel = h_channel_from_rgb(undistorted_img, (0, 30))
+
+        # hls = cv.cvtColor(img, cv.COLOR_RGB2HLS)
+        # self._show_plot(hls[:,:,0])
+        # self._show_plot(hls[:,:,2])
+        # self._show_plot(h_channel)
+        # self._show_plot(s_channel)
+
+        # self._show_plot(hls[:,:,2])
+        # self._show_plot(img)
         poi = self._apply_mask(self._poi(sobel, s_channel))
+        # self._show_plot(self.transform.warp(poi), 1)
+        # self._show_plot(poi, 1)
         line_img = np.zeros((h, w, 3), dtype=np.uint8)
         lane_img, debug_img = self.lane.find_lane_lines(self.transform.warp(poi))
         poly_unwarp = self.transform.unwarp(lane_img)
@@ -71,7 +84,6 @@ class Detector:
             .by_direction(y, self.sobel_cfg.direction_thrashold)\
             .by_magnitude(x, y, self.sobel_cfg.magnitude_trashold)\
             .by_angle(x, y, self.sobel_cfg.angle_trashold)
-
         return sobel_factory.build(
             ((sobel_factory[0] == 1) & (sobel_factory[1] == 1))
             | ((sobel_factory[2] == 1) & (sobel_factory[3] == 1)))
@@ -79,9 +91,10 @@ class Detector:
     def _poi(self, sobel, s_channel):
         poi = np.zeros_like(s_channel)
         # poi[((s_channel == 1) & (h_channel != 1)) | (sobel == 1)] = 1
-        poi[(s_channel == 1) | (sobel == 1)] = 1
+        # poi[(h_channel == 1) & (s_channel != 1) & (sobel != 1)] = 1
         # poi[(sobel == 1)] = 1
         # poi[(h_channel == 1)] = 1
+        poi[(s_channel == 1) | (sobel == 1)] = 1
         return poi
 
     def _apply_mask(self, poi):
