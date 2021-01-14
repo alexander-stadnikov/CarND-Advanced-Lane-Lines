@@ -11,8 +11,8 @@ class Lane:
     """ Finds lane lines, their curvature, CCP and overlays if needed. """
 
     def __init__(self, sliding_windows_config: SlidingWindowsConfig, scale: Tuple[float, float], debug: bool = False):
-        self.left_line = Line(LinePosition.LEFT, sliding_windows_config, debug=debug)
-        self.right_line = Line(LinePosition.RIGHT, sliding_windows_config, debug=debug)
+        self.left_line = Line(LinePosition.LEFT, sliding_windows_config, scale)
+        self.right_line = Line(LinePosition.RIGHT, sliding_windows_config, scale)
         self.scale = scale
         self.debug = debug
         self.bad_frames = 0
@@ -23,33 +23,36 @@ class Lane:
         bottom = img.shape[0]
         ll = self.left_line
         rl = self.right_line
-        left_curvature = ll.curvature_last(self.scale, bottom)
-        right_curvature = rl.curvature_last(self.scale, bottom)
-        curvatures_too_differ = (np.abs(left_curvature - right_curvature) > 2000 and min(left_curvature, right_curvature) < 5000)
-        distance_too_big = (np.abs(ll.curve_last(bottom) - rl.curve_last(bottom))*self.scale[0] > 5)
-        non_parallel = np.abs(ll.a - rl.a) > 0.001
-        if ll.fits and rl.fits and (curvatures_too_differ or distance_too_big or non_parallel):
-            self.bad_frames += 1
-            if self.bad_frames == self.max_bad_frames:
-                self.reset_is_needed = True
-            return
+        if ll.fits and rl.fits:
+            left_curvature = ll.curvature(bottom)
+            right_curvature = rl.curvature(bottom)
+            curvatures_too_differ = (np.abs(left_curvature - right_curvature) > 2000 and min(left_curvature, right_curvature) < 5000)
+            distance_too_big = (np.abs(ll.curve_last(bottom) - rl.curve_last(bottom))*self.scale[0] > 5)
+            non_parallel = np.abs(ll.a - rl.a) > 0.001
+
+            if curvatures_too_differ or distance_too_big or non_parallel:
+                self.bad_frames += 1
+                if self.bad_frames == self.max_bad_frames:
+                    self.reset_is_needed = True
+                return
         self.bad_frames = 0
         self.reset_is_needed = False
         self.left_line.store_last_detect()
         self.right_line.store_last_detect()
-
 
     def find_lane_lines(self, img):
         nonzero = img.nonzero()
         nonzerox = np.array(nonzero[1])
         nonzeroy = np.array(nonzero[0])
 
+        ll, lr = self.left_line, self.right_line
+
         if self.reset_is_needed:
-            out_left_img = self.left_line._detect_sliding_windows(img, nonzerox, nonzeroy)
-            out_right_img = self.right_line._detect_sliding_windows(img, nonzerox, nonzeroy)
+            out_left_img = ll.detect_sliding_windows(img, nonzerox, nonzeroy)
+            out_right_img = lr.detect_sliding_windows(img, nonzerox, nonzeroy)
         else:
-            out_left_img = self.left_line._detect_around_polynome(img, nonzerox, nonzeroy)
-            out_right_img = self.right_line._detect_around_polynome(img, nonzerox, nonzeroy)
+            out_left_img = ll.detect_around_polynome(img, nonzerox, nonzeroy)
+            out_right_img = lr.detect_around_polynome(img, nonzerox, nonzeroy)
 
         self._sanity_check(img)
 
@@ -59,8 +62,8 @@ class Lane:
         lane_poly_img = np.zeros_like(lane_img)
 
         y = np.linspace(0, img.shape[0] - 1, img.shape[0])
-        left_curve = self.left_line.curve(y)
-        right_curve = self.right_line.curve(y)
+        left_curve = ll.curve(y)
+        right_curve = lr.curve(y)
         x_left = np.array([np.transpose(np.vstack([left_curve, y]))])
         x_right = np.array([np.flipud(np.transpose(np.vstack([right_curve, y])))])
         points = np.hstack((x_left, x_right))
@@ -79,12 +82,11 @@ class Lane:
 
         return lane_img, debug_img
 
-    def curvature(self, y: int) -> int:
+    def curvature(self, y: float) -> float:
         return np.average([
-            self.left_line.curvature(self.scale, y),
-            self.right_line.curvature(self.scale, y)
+            self.left_line.curvature(y),
+            self.right_line.curvature(y)
         ])
-
 
     def car_offset(self, frame_size: Tuple[int, int]) -> float:
         x, y = frame_size
