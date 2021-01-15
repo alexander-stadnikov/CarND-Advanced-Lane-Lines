@@ -246,12 +246,15 @@ Details are in [project.py](project.py).
 ## Results
 
 Project Video:
+
 [![ProjectVideo](http://img.youtube.com/vi/aTXOZV81VPY/0.jpg)](https://www.youtube.com/watch?v=aTXOZV81VPY)
 
 Challenge Video:
+
 [![ChallengeVideo](http://img.youtube.com/vi/SqdOP5xWv_4/0.jpg)](https://www.youtube.com/watch?v=SqdOP5xWv_4)
 
 Harder Challenge Video:
+
 [![HarderChallengeVideo](http://img.youtube.com/vi/3OPqP5DQg6Y/0.jpg)](https://www.youtube.com/watch?v=3OPqP5DQg6Y)
 
 ## Improvements
