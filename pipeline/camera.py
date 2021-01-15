@@ -30,7 +30,7 @@ class Camera:
         """ Returns undistorted image. Takes gray scaled image as an input. """
         return cv.undistort(img, self.mtx, self.dist, None, self.mtx)
 
-    def calibrate_with_chessboard(self, images: List[str], pattern_size: Tuple[int, int], output: str = None):
+    def calibrate_with_chessboard(self, images: List[str], pattern_size: Tuple[int, int], output: str = None) -> None:
         """ Calibrate the camera with set of images with the specified chessboard """
         w, h = pattern_size
         obj_points = []  # 3D real word points
@@ -61,7 +61,7 @@ class Camera:
         self._calibrated = True
         self._save()
 
-    def detect_charuco_corners(self, video_in: str, video_out: str):
+    def detect_charuco_corners(self, video_in: str, video_out: str) -> None:
         """ Detect charuco corners on video and overlay an additional information """
         cap = cv.VideoCapture(video_in)
         board = Camera._create_charuco_board()
@@ -91,7 +91,7 @@ class Camera:
         cap.release()
         output.release()
 
-    def calibrate_with_charuco(self, video_sample: str, frame_rate: int):
+    def calibrate_with_charuco(self, video_sample: str, frame_rate: int) -> None:
         """ Calibrate the camera with a video sample with ChArUco board DICT_6X6_250 """
         cap = cv.VideoCapture(video_sample)
         _dict = Camera._charuco_dict()

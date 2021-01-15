@@ -1,3 +1,5 @@
+""" The module contains detector related classes. """
+
 from dataclasses import dataclass
 from typing import Tuple, List
 from collections import deque
