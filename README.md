@@ -199,7 +199,7 @@ All technical details are in [Line](pipeline/line.py) and [Lane](pipeline/lane.p
 
 With found coefficients, it's possible to find the curve radius according to the formula:
 
-$$R_\text{curve in pixels}=\frac{(1 + (2Ay + B)^2))^\frac{3}{2}}{|2A|}$$
+<img src="https://render.githubusercontent.com/render/math?math=R_\text{curve in pixels}=\frac{(1 + (2Ay + B)^2))^\frac{3}{2}}{|2A|}">
 
 The formula above gives the radius in pixels. To convert these pixels to meters, we need to use the next observations:
 -	The highway is in the USA
