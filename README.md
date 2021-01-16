@@ -199,7 +199,7 @@ All technical details are in [Line](pipeline/line.py) and [Lane](pipeline/lane.p
 
 With found coefficients, it's possible to find the curve radius according to the formula:
 
-<img src="https://render.githubusercontent.com/render/math?math=R_\text{curve in pixels}=\frac{(1 + (2Ay + B)^2))^\frac{3}{2}}{|2A|}">
+<img src="https://render.githubusercontent.com/render/math?math=R_\text{curve%20in%20pixels}=\frac{(1%2B(2Ay%2BB)^2))^\frac{3}{2}}{|2A|}">
 
 The formula above gives the radius in pixels. To convert these pixels to meters, we need to use the next observations:
 -	The highway is in the USA
@@ -211,9 +211,9 @@ The formula above gives the radius in pixels. To convert these pixels to meters,
 
 To calculate how many meters are in each pixel, we need to divide the real-world data into the number of pixels on the warped image:
 
-$$x_{scaled}=x_{real}/x_{pixels}=3.7/370$$
-$$y_{scaled}=y_{real}/y_{pixels}=30/720$$
-$$R_\text{curve in meters}=\frac{(1 + (2Ay*y_{scaled} + B)^2))^\frac{3}{2}}{|2A|}$$
+<img src="https://render.githubusercontent.com/render/math?math=x_{scaled}=x_{real}/x_{pixels}=3.7/370">
+<img src="https://render.githubusercontent.com/render/math?math=y_{scaled}=y_{real}/y_{pixels}=30/720">
+<img src="https://render.githubusercontent.com/render/math?math=R_\text{curve%20in%20meters}=\frac{(1%2B(2Ay*y_{scaled}%2BB)^2))^\frac{3}{2}}{|2A|}">
 
 Now we can calculate the real-world radius of each line and then take their average.
 
